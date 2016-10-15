@@ -72,11 +72,9 @@ function randGenerateFoe(){
 
 function updateFoe(){
 	for(var i = 0;i < numOffoeB;i++){ 
-
 		foeB[i].accelerate(foeB[i].acc);
 	    foeB[i].update();
 	    foeB[i].display();
-		//console.log("foeB["+i+"].position.x="+foeB[i].position.x+"foeB["+i+"].position.y="+foeB[i].position.y);
 		
 	}
 	
