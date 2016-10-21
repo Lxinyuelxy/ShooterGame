@@ -2,9 +2,11 @@ var player;
 var foeA = new Array();
 var foeB = new Array();
 var mushroom = new Array();
+var bullet = new Array();
 var numOffoeA;
 var numOffoeB;
 var numOfMushroom = 3;
+var numOfBullet = 0;
 
 var fr = 30;
 
@@ -14,6 +16,8 @@ var playerImg;
 var foeBImg;
 var foeAImg;
 var mushroomImg;
+var bulletDirectionImg;
+var bulletImg;
 var fontVag;
 var playerDieSound;
 var winSound;
@@ -24,6 +28,9 @@ var delayFrame = 0;
 var playedLoseSound = false;
 var playedWinSound = false;
 
+var currentTime;
+var angleOfRotation;
+
 function preload(){
 	bgImg = loadImage("./assets/bg.PNG");
 	heartImg = loadImage("./assets/heart.png"); 
@@ -31,6 +38,9 @@ function preload(){
 	foeBImg = loadImage("./assets/foeB.png");
 	foeAImg = loadImage("./assets/foeA.png");
 	mushroomImg = loadImage("./assets/mushroom.png");
+	bulletDirectionImg = loadImage("./assets/bulletDirection.png");
+	bulletImg = loadImage("./assets/bullet.png");
+	
 	fontVag = loadFont("./assets/vag.ttf");
 	playerDieSound = loadSound("./assets/playerDie.mp3");
 	winSound = loadSound("./assets/win.wav");
@@ -41,6 +51,7 @@ function setup() {
 	createCanvas(windowWidth, windowHeight);
 	frameRate(fr); 
 	deathDis = foeBImg.width;
+
 	
 	maxVelocity = createVector(4,4);
     maxPosition = createVector(windowWidth,windowHeight);
@@ -65,7 +76,7 @@ function setup() {
 
 function randGenerateFoe(){
 	numOffoeA = parseInt(random(2,5));
-	numOffoeB = 10 - numOffoeA;
+	numOffoeB = 5 - numOffoeA;
 	
 	for(var i = 0;i < numOffoeB;i++){
 		var p = createVector(random(50,windowWidth - 50),random(50,windowHeight - 50));
@@ -79,13 +90,13 @@ function randGenerateFoe(){
 		foeB[i] = new Characters(p,v,a,foeBImg);
 	}
 	
-	for(var i=0;i < numOffoeA;i++){
-		var p = createVector(random(50,windowWidth - 50),random(50,windowHeight - 50));
-		var v = createVector(0,0);
-		var a = createVector(0,0);
+	// for(var i=0;i < numOffoeA;i++){
+		// var p = createVector(random(50,windowWidth - 50),random(50,windowHeight - 50));
+		// var v = createVector(0,0);
+		// var a = createVector(0,0);
 		
-		foeA[i] = new FoeA(p,v,a,foeAImg);
-	}
+		// foeA[i] = new FoeA(p,v,a,foeAImg);
+	// }
 }
 
 
@@ -101,36 +112,46 @@ function randGenerateMushroom(){
 
 
 function draw() {
-  clear();
-  frameRate(fr);
-  background(bgImg); 
-  showLife(player.life);
+	clear();
+    frameRate(fr);
+    background(bgImg); 
+    showLife(player.life);
  
   
-  if(player.life > 0){
-	  player.display();
-	  showMushroom(numOfMushroom);
+	if(player.life > 0){
+		player.display();
+	    showMushroom(numOfMushroom);
+		shootingDirection();
 	  
-	  push();
-      textFont(fontVag);
-      textSize(30);
-      text("Life:", 30, 35);
-      text("Time: "+ parseInt(frameCount/30)+" s", windowWidth-250, 35);
-      pop();
+	    push();
+        textFont(fontVag);
+        textSize(30);
+        text("Life:", 30, 35);
+		
+		currentTime = frameCount/fr;
+        text("Time: "+ parseInt(currentTime)+" s", windowWidth-250, 35);
+        pop();
 	  
-	  updatePlayer();
-	  updateFoe();
-	  updateMushroom();
+	    updatePlayer();
+	    updateFoe();
+	    updateMushroom();
+		
+		for(var i=0;i < numOfBullet;i++){
+			if(bullet[i] != null){
+				updateBullet(bullet[i]);
+			}
+		}
 	  
  
-	  delayFrame++;
-      if(updatePlayerLife(deathDis)){
-		  deathDis = 5;
+	    delayFrame++;
+        if(updatePlayerLife(deathDis)){
+			deathDis = 5;
+			delayFrame = 0;
 		}
 		
-	  if(delayFrame == 40){
-		  deathDis = foeBImg.width;
-		  delayFrame = 0;
+	    if(delayFrame == 40){
+			deathDis = foeBImg.width;
+		    delayFrame = 0;
 		}
 	  
     }else{	
@@ -139,6 +160,17 @@ function draw() {
 	}
   
 }
+
+function shootingDirection(){
+	
+	push();
+	translate(windowWidth - 80, windowHeight - 80);
+	angleOfRotation = currentTime;
+	rotate(angleOfRotation);
+	image(bulletDirectionImg, -bulletDirectionImg.width/2, -bulletDirectionImg.height/2);
+	pop();
+}
+
 
 function updatePlayer(){
 	updatePlayerWithMouse();
@@ -181,26 +213,74 @@ function updatePlayerWithKey(){
 		}
 		player.update();
 		player.display();
+		
+		
 	  
 	}
 	
 }
 
-function updateFoe(){
-	for(var i = 0;i < numOffoeB;i++){ 
-		foeB[i].accelerate(foeB[i].acc);
-	    foeB[i].update();
-	    foeB[i].display();
-	}
+
+function updateBullet(bul){
+	bul.accelerate(bul.acc);
+	bul.update();
+	bul.display();
+	
+	console.log("bul.position.x = "+bul.position.x);
+	var x = bul.position.x;
+	var y = bul.position.y;
 	
 	for(var i = 0;i < numOffoeA;i++){
-		var a = createVector(0.01*(player.position.x-foeA[i].position.x),0.01*(player.position.y-foeA[i].position.y));
-		foeA[i].accelerate(a);
-		foeA[i].update();
-	    foeA[i].display();
+		if(foeA[i] != null){
+			var bulletToFoeA = dist(x - bulletImg.width/2, 
+			y - bulletImg.height/2, 
+			foeA[i].position.x - foeAImg.width/2, 
+			foeA[i].position.y - foeAImg.height/2);
 		
-		console.log("敌人A在x方向的速度是:"+foeA[i].velocity.x+",y方向的速度是:"+foeA[i].velocity.y);
+			if(abs(bulletToFoeA) <= (bulletImg.width/2 + foeAImg.width/2)){
+				foeA[i] = null;
+				bul = null;
+				numOfBullet--;
+			}
+		}
 	}
+	
+	for(var i = 0;i < numOffoeB;i++){
+		if(foeB[i] != null){
+			var bulletToFoeB = dist(x - bulletImg.width/2,
+			y - bulletImg.height/2, 
+			foeB[i].position.x - foeBImg.width/2, 
+			foeB[i].position.y - foeBImg.height/2);
+		
+			if(abs(bulletToFoeB) <= (bulletImg.width/2 + foeBImg.width/2)){
+				foeB[i] = null;
+				bul = null;
+				numOfBullet--;
+			}
+		}
+		
+	}
+}
+
+
+function updateFoe(){
+	for(var i = 0;i < numOffoeB;i++){
+		if(foeB[i]!=null){
+			foeB[i].accelerate(foeB[i].acc);
+			foeB[i].update();
+			foeB[i].display();
+		}
+		
+	}
+	
+	// for(var i = 0;i < numOffoeA;i++){
+		// if(foeA[i]!=null){
+			// var a = createVector(0.01*(player.position.x-foeA[i].position.x),0.01*(player.position.y-foeA[i].position.y));
+			// foeA[i].accelerate(a);
+			// foeA[i].update();
+			// foeA[i].display();
+		// }	
+	// }
 	
 }
 
@@ -214,7 +294,6 @@ function updateMushroom(){
 		
 			if(disToMushroom <= playerImg.width/2+mushroomImg.width/2){
 				player.life++;
-				//numOfMushroom--;
 				mushroom[i] = null;
 				console.log("numOfMushroom="+numOfMushroom);
 				console.log("player.life="+player.life);
@@ -236,22 +315,68 @@ function gameOver(){
 	}
 }
 
+
+function keyPressed(){
+	if(' ' == key){
+		generateBullet();
+	}
+}
+
+function generateBullet(){
+	var p = player.position;
+	var v = createVector(0,0);
+	var a = getBulletDirection();
+	
+	bullet[numOfBullet] = new Characters(p,v,a,bulletImg);
+	numOfBullet++;
+	
+}
+
+function getBulletDirection(){
+
+	var rotatingCycle = 6;// 转盘的旋转周期为6秒
+	var numOfTurns = parseInt(currentTime/rotatingCycle);
+
+	if((currentTime >= (0+numOfTurns*rotatingCycle)) && (currentTime < (1.5+numOfTurns*rotatingCycle))){
+		console.log("1111111111111angleOfRotation="+angleOfRotation);
+		var a = createVector(1,tan(angleOfRotation));
+	
+	}else if((currentTime > (1.5+numOfTurns*rotatingCycle)) && (currentTime <= (3+numOfTurns*rotatingCycle))){
+		console.log("222222222222angleOfRotation="+angleOfRotation);
+		var a = createVector(-1,-tan(angleOfRotation));
+		
+	}else if((currentTime >= (3+numOfTurns*rotatingCycle)) && (currentTime < (4.5+numOfTurns*rotatingCycle))){
+		console.log("3333333333333angleOfRotation="+angleOfRotation);
+		var a = createVector(-1,-tan(angleOfRotation));
+		
+	}else if((currentTime > (4.5+numOfTurns*rotatingCycle)) && (currentTime <= (6+numOfTurns*rotatingCycle))){
+		console.log("4444444444444angleOfRotation="+angleOfRotation);
+		var a = createVector(1,tan(angleOfRotation));
+	
+	}else if(angleOfRotation == (1.5+numOfTurns*rotatingCycle)){
+		var a = createVector(0,1);
+		
+	}else if(angleOfRotation == (3+numOfTurns*rotatingCycle)){
+		var a = createVector(0,-1);
+	}
+	console.log("numOfBullet="+numOfBullet);
+	console.log("a.x="+a.x+",a.y="+a.y);
+	return a;
+	
+}
+
 function keyReleased(){
 	if(UP_ARROW==keyCode||DOWN_ARROW==keyCode||RIGHT_ARROW==keyCode||LEFT_ARROW==keyCode){
-		
-		// console.log("玩家x方向上的加速度是："+player.acc.x+",y方向的加速度是："+player.acc.y);
-		// console.log("玩家x方向上的速度是："+player.velocity.x+",y方向的速度是："+player.velocity.y);
-		// console.log("玩家x方向上的坐标是："+player.position.x+",y方向的坐标是："+player.position.y);
 		
 		player.acc = createVector(0,0);
 		player.velocity = createVector(0,0);
 	}
+
 }
 
-function mousePressed(){
-     player.moveDistance = dist(player.position.x, player.position.y, mouseX, mouseY);
-	 player.isDragged = true;
-	 console.log("mouseX="+mouseX+", mouseY="+mouseY);
+function mousePressed(){	
+    player.moveDistance = dist(player.position.x, player.position.y, mouseX, mouseY);
+	player.isDragged = true;
 	 
 }
 
@@ -261,38 +386,43 @@ function mouseReleased(){
 
 function updatePlayerLife(dis){
 	for(var i=0;i < numOffoeB;i++){
-		var disToFoeB = dist(player.position.x - playerImg.width/2,
-		player.position.y - playerImg.height/2, 
-		foeB[i].position.x - foeBImg.width/2, 
-		foeB[i].position.y - foeBImg.height/2);
+		if(foeB[i] != null){
+			var disToFoeB = dist(player.position.x - playerImg.width/2,
+			player.position.y - playerImg.height/2, 
+			foeB[i].position.x - foeBImg.width/2, 
+			foeB[i].position.y - foeBImg.height/2);
 		
-		if(abs(disToFoeB) <= dis){
-			player.life--;
-			playerDieSound.setVolume(0.1);
-			playerDieSound.play();
-			return true;
+			if(abs(disToFoeB) <= dis){
+				player.life--;
+				playerDieSound.setVolume(0.1);
+				playerDieSound.play();
+				return true;
+			}
 		}
-		//console.log("玩家距敌人的距离是："+disToFoeB);
-		// console.log("玩家x方向上的坐标是："+player.position.x+",y方向的坐标是："+player.position.y);
-		// console.log("敌人x方向上的坐标是："+foeB[i].position.x+",y方向的坐标是："+foeB[i].position.y);
+		
+
 	}
 	
-	for(var i = 0;i < numOffoeA;i++){
-		var disToFoeA = dist(player.position.x - playerImg.width/2,
-		player.position.y - playerImg.height/2, 
-		foeA[i].position.x - foeAImg.width/2, 
-		foeA[i].position.y - foeAImg.height/2);
+	// for(var i = 0;i < numOffoeA;i++){
+		// if(foeA[i] != null){
+			// var disToFoeA = dist(player.position.x - playerImg.width/2,
+			// player.position.y - playerImg.height/2, 
+			// foeA[i].position.x - foeAImg.width/2, 
+			// foeA[i].position.y - foeAImg.height/2);
 		
-		if(abs(disToFoeA) <= dis){
-			player.life--;
-			playerDieSound.setVolume(0.1);
-			playerDieSound.play();
-			return true;
-		}
-	}
+			// if(abs(disToFoeA) <= dis){
+				// player.life--;
+				// playerDieSound.setVolume(0.1);
+				// playerDieSound.play();
+				// return true;
+			// }
+		// }
+		
+	// }
 	return false;
 	
 }
+
 function showLife(life){
 	for(var i=0;i < life;i++){
 		image(heartImg, 90 + i*35, 15);

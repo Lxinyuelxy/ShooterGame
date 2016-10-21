@@ -1,7 +1,7 @@
 var maxVelocity;
 var maxPosition;
 
-function Characters(position,velocity,acc,img){  //构建游戏角色的构造函数
+function Characters(position,velocity,acc,img){  
 
 	this.position = createVector(position.x,position.y);//位置
 	this.velocity = createVector(velocity.x,velocity.y);//速度
@@ -22,10 +22,7 @@ Characters.prototype.accelerate = function(a){
 Characters.prototype.update = function(){
 	this.position.x += this.velocity.x;
 	this.position.y += this.velocity.y;
-		
-	//this.position = limitValue(this.position,maxPosition);
-	// console.log("this.position.x="+this.position.x+",this.position.y="+this.position.y);
-	// console.log("windowWidth="+windowWidth+",windowHeight="+windowHeight);
+
 	if((this.position.x- this.img.width/2) <=0 || (this.position.x + this.img.width/2) >= windowWidth){
 		this.velocity.x = -this.velocity.x;
 	}
