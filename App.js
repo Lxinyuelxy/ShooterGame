@@ -52,7 +52,7 @@ function setup() {
 	deathDis = foeBImg.width;
 
 	maxVelocity = createVector(4,4);
-    maxPosition = createVector(windowWidth,windowHeight);
+    	maxPosition = createVector(windowWidth,windowHeight);
 
 	//创建玩家
 	var position = createVector(100,100);
@@ -107,9 +107,9 @@ function randGenerateMushroom(){
 
 function draw() {
 	clear();
-    frameRate(fr);
-    background(bgImg); 
-    showLife(player.life);
+    	frameRate(fr);
+    	background(bgImg); 
+    	showLife(player.life);
 	showMushroom(numOfMushroom);
 	
   
