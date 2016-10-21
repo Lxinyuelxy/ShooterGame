@@ -28,8 +28,8 @@ var delayFrame = 0;
 var playedLoseSound = false;
 var playedWinSound = false;
 
-var currentTime;
-var angleOfRotation;
+var angleOfRotation = 0;
+
 
 function preload(){
 	bgImg = loadImage("./assets/bg.PNG");
@@ -39,8 +39,7 @@ function preload(){
 	foeAImg = loadImage("./assets/foeA.png");
 	mushroomImg = loadImage("./assets/mushroom.png");
 	bulletDirectionImg = loadImage("./assets/bulletDirection.png");
-	bulletImg = loadImage("./assets/bullet.png");
-	
+	bulletImg = loadImage("./assets/bullet.png");	
 	fontVag = loadFont("./assets/vag.ttf");
 	playerDieSound = loadSound("./assets/playerDie.mp3");
 	winSound = loadSound("./assets/win.wav");
@@ -52,16 +51,13 @@ function setup() {
 	frameRate(fr); 
 	deathDis = foeBImg.width;
 
-	
 	maxVelocity = createVector(4,4);
     maxPosition = createVector(windowWidth,windowHeight);
 
-	//初始化玩家属性 
+	//创建玩家
 	var position = createVector(100,100);
 	var velocity = createVector(0,0);
 	var acc = createVector(0,0);
-	
-	//创建玩家
 	player = new Player(position, velocity, acc, playerImg);
 	
 	//随机创建敌人
@@ -70,13 +66,11 @@ function setup() {
 	//创建蘑菇
 	randGenerateMushroom();
 
-
-	
 }
 
 function randGenerateFoe(){
 	numOffoeA = parseInt(random(2,5));
-	numOffoeB = 5 - numOffoeA;
+	numOffoeB = 10 - numOffoeA;
 	
 	for(var i = 0;i < numOffoeB;i++){
 		var p = createVector(random(50,windowWidth - 50),random(50,windowHeight - 50));
@@ -90,13 +84,13 @@ function randGenerateFoe(){
 		foeB[i] = new Characters(p,v,a,foeBImg);
 	}
 	
-	// for(var i=0;i < numOffoeA;i++){
-		// var p = createVector(random(50,windowWidth - 50),random(50,windowHeight - 50));
-		// var v = createVector(0,0);
-		// var a = createVector(0,0);
+	for(var i=0;i < numOffoeA;i++){
+		var p = createVector(random(50,windowWidth - 50),random(50,windowHeight - 50));
+		var v = createVector(0,0);
+		var a = createVector(0,0);
 		
-		// foeA[i] = new FoeA(p,v,a,foeAImg);
-	// }
+		foeA[i] = new FoeA(p,v,a,foeAImg);
+	}
 }
 
 
@@ -116,59 +110,60 @@ function draw() {
     frameRate(fr);
     background(bgImg); 
     showLife(player.life);
- 
+	showMushroom(numOfMushroom);
+	
   
 	if(player.life > 0){
 		player.display();
-	    showMushroom(numOfMushroom);
-		shootingDirection();
-	  
-	    push();
-        textFont(fontVag);
-        textSize(30);
-        text("Life:", 30, 35);
+		push();
+		textFont(fontVag);
+		textSize(30);
+		text("Life:", 30, 35);		
+		text("Time: "+ parseInt(frameCount/fr)+" s", windowWidth-250, 35);
+		pop();
 		
-		currentTime = frameCount/fr;
-        text("Time: "+ parseInt(currentTime)+" s", windowWidth-250, 35);
-        pop();
-	  
-	    updatePlayer();
-	    updateFoe();
-	    updateMushroom();
-		
-		for(var i=0;i < numOfBullet;i++){
-			if(bullet[i] != null){
-				updateBullet(bullet[i]);
+		if(isWin()){
+			gameWin();
+		}
+		else{
+			shootingDirection();
+			updatePlayer();
+			updateFoe();
+			updateMushroom();		
+			for(var i=0;i < numOfBullet;i++){
+				if(bullet[i] != null){
+					updateBullet(bullet[i]);
+				}
+			}
+			
+			delayFrame++;
+			if(updatePlayerLife(deathDis)){
+				deathDis = 5;
+				delayFrame = 0;
+			}
+			if(delayFrame == 40){
+				deathDis = foeBImg.width;
+				delayFrame = 0;
 			}
 		}
-	  
- 
-	    delayFrame++;
-        if(updatePlayerLife(deathDis)){
-			deathDis = 5;
-			delayFrame = 0;
-		}
 		
-	    if(delayFrame == 40){
-			deathDis = foeBImg.width;
-		    delayFrame = 0;
-		}
-	  
-    }else{	
+    } else {	
 		gameOver();
-
 	}
-  
 }
 
 function shootingDirection(){
-	
+	angleOfRotation = angleOfRotation + PI/180;
+	if(angleOfRotation >= 2*PI){  //angleOfRotation在区间[0,2*PI]范围内
+		angleOfRotation = 0;
+	}
 	push();
 	translate(windowWidth - 80, windowHeight - 80);
-	angleOfRotation = currentTime;
 	rotate(angleOfRotation);
 	image(bulletDirectionImg, -bulletDirectionImg.width/2, -bulletDirectionImg.height/2);
 	pop();
+	
+	
 }
 
 
@@ -214,19 +209,88 @@ function updatePlayerWithKey(){
 		player.update();
 		player.display();
 		
-		
-	  
 	}
 	
 }
 
+function updatePlayerLife(dis){
+	for(var i=0;i < numOffoeB;i++){
+		if(foeB[i] != null){
+			var disToFoeB = dist(player.position.x - playerImg.width/2,
+			player.position.y - playerImg.height/2, 
+			foeB[i].position.x - foeBImg.width/2, 
+			foeB[i].position.y - foeBImg.height/2);
+		
+			if(abs(disToFoeB) <= dis){
+				player.life--;
+				playerDieSound.setVolume(0.1);
+				playerDieSound.play();
+				return true;
+			}
+		}
+	}
+	
+	for(var i = 0;i < numOffoeA;i++){
+		if(foeA[i] != null){
+			var disToFoeA = dist(player.position.x - playerImg.width/2,
+			player.position.y - playerImg.height/2, 
+			foeA[i].position.x - foeAImg.width/2, 
+			foeA[i].position.y - foeAImg.height/2);
+		
+			if(abs(disToFoeA) <= dis){
+				player.life--;
+				playerDieSound.setVolume(0.1);
+				playerDieSound.play();
+				return true;
+			}
+		}		
+	}
+	return false;
+}
+
+function updateFoe(){
+	for(var i = 0;i < numOffoeB;i++){
+		if(foeB[i]!=null){
+			foeB[i].accelerate(foeB[i].acc);
+			foeB[i].update();
+			foeB[i].display();
+		}		
+	}	
+	for(var i = 0;i < numOffoeA;i++){
+		if(foeA[i]!=null){
+			var a = createVector(0.01*(player.position.x-foeA[i].position.x),0.01*(player.position.y-foeA[i].position.y));
+			foeA[i].accelerate(a);
+			foeA[i].update();
+			foeA[i].display();
+		}	
+	}
+	
+}
+
+function updateMushroom(){
+	for(var i=0;i < numOfMushroom;i++){
+		if(mushroom[i] != null){
+			var disToMushroom = dist(player.position.x - playerImg.width/2,
+			player.position.y - playerImg.height/2, 
+			mushroom[i].position.x - mushroomImg.width/2, 
+			mushroom[i].position.y - mushroomImg.height/2); 
+		
+			if(disToMushroom <= playerImg.width/2+mushroomImg.width/2){
+				player.life++;
+				mushroom[i] = null;
+				console.log("numOfMushroom="+numOfMushroom);
+				console.log("player.life="+player.life);
+			}
+		}
+	
+	}
+}
 
 function updateBullet(bul){
 	bul.accelerate(bul.acc);
 	bul.update();
 	bul.display();
 	
-	console.log("bul.position.x = "+bul.position.x);
 	var x = bul.position.x;
 	var y = bul.position.y;
 	
@@ -262,60 +326,6 @@ function updateBullet(bul){
 	}
 }
 
-
-function updateFoe(){
-	for(var i = 0;i < numOffoeB;i++){
-		if(foeB[i]!=null){
-			foeB[i].accelerate(foeB[i].acc);
-			foeB[i].update();
-			foeB[i].display();
-		}
-		
-	}
-	
-	// for(var i = 0;i < numOffoeA;i++){
-		// if(foeA[i]!=null){
-			// var a = createVector(0.01*(player.position.x-foeA[i].position.x),0.01*(player.position.y-foeA[i].position.y));
-			// foeA[i].accelerate(a);
-			// foeA[i].update();
-			// foeA[i].display();
-		// }	
-	// }
-	
-}
-
-function updateMushroom(){
-	for(var i=0;i < numOfMushroom;i++){
-		if(mushroom[i] != null){
-			var disToMushroom = dist(player.position.x - playerImg.width/2,
-			player.position.y - playerImg.height/2, 
-			mushroom[i].position.x - mushroomImg.width/2, 
-			mushroom[i].position.y - mushroomImg.height/2); 
-		
-			if(disToMushroom <= playerImg.width/2+mushroomImg.width/2){
-				player.life++;
-				mushroom[i] = null;
-				console.log("numOfMushroom="+numOfMushroom);
-				console.log("player.life="+player.life);
-			}
-		}
-	
-	}
-}
-
-function gameOver(){
-	push();
-	textFont(fontVag);
-	textSize(60);
-	text("You Lose!", windowWidth/2.5, windowHeight/2);
-	pop();
-	if(!playedLoseSound){
-		loseSound.play();
-		playedLoseSound = true;
-	}
-}
-
-
 function keyPressed(){
 	if(' ' == key){
 		generateBullet();
@@ -333,36 +343,28 @@ function generateBullet(){
 }
 
 function getBulletDirection(){
+	var a = createVector(0,0);  
 
-	var rotatingCycle = 6;// 转盘的旋转周期为6秒
-	var numOfTurns = parseInt(currentTime/rotatingCycle);
-
-	if((currentTime >= (0+numOfTurns*rotatingCycle)) && (currentTime < (1.5+numOfTurns*rotatingCycle))){
-		console.log("1111111111111angleOfRotation="+angleOfRotation);
-		var a = createVector(1,tan(angleOfRotation));
+	if((angleOfRotation >= 0) && (angleOfRotation < PI/2)){
+		a = createVector(1,tan(angleOfRotation));
 	
-	}else if((currentTime > (1.5+numOfTurns*rotatingCycle)) && (currentTime <= (3+numOfTurns*rotatingCycle))){
-		console.log("222222222222angleOfRotation="+angleOfRotation);
-		var a = createVector(-1,-tan(angleOfRotation));
+	}else if((angleOfRotation > PI/2) && (angleOfRotation <= PI)){
+		a = createVector(-1,-tan(angleOfRotation));
 		
-	}else if((currentTime >= (3+numOfTurns*rotatingCycle)) && (currentTime < (4.5+numOfTurns*rotatingCycle))){
-		console.log("3333333333333angleOfRotation="+angleOfRotation);
-		var a = createVector(-1,-tan(angleOfRotation));
+	}else if((angleOfRotation >= PI) && (angleOfRotation < 3*PI/2)){
+		a = createVector(-1,-tan(angleOfRotation));
 		
-	}else if((currentTime > (4.5+numOfTurns*rotatingCycle)) && (currentTime <= (6+numOfTurns*rotatingCycle))){
-		console.log("4444444444444angleOfRotation="+angleOfRotation);
-		var a = createVector(1,tan(angleOfRotation));
-	
-	}else if(angleOfRotation == (1.5+numOfTurns*rotatingCycle)){
-		var a = createVector(0,1);
+	}else if((angleOfRotation > 3*PI/2) && (angleOfRotation <= 2*PI)){
+		a = createVector(1,tan(angleOfRotation));
 		
-	}else if(angleOfRotation == (3+numOfTurns*rotatingCycle)){
-		var a = createVector(0,-1);
+	}else if(angleOfRotation == PI/2){
+		a = createVector(0,1);
+		
+	}else if(angleOfRotation == 3*PI/2){
+		a = createVector(0,-1);
 	}
-	console.log("numOfBullet="+numOfBullet);
-	console.log("a.x="+a.x+",a.y="+a.y);
-	return a;
-	
+	console.log("angleOfRotation = "+ angleOfRotation*180/PI);
+	return a;	
 }
 
 function keyReleased(){
@@ -384,45 +386,6 @@ function mouseReleased(){
 	player.isDragged = false;
 }
 
-function updatePlayerLife(dis){
-	for(var i=0;i < numOffoeB;i++){
-		if(foeB[i] != null){
-			var disToFoeB = dist(player.position.x - playerImg.width/2,
-			player.position.y - playerImg.height/2, 
-			foeB[i].position.x - foeBImg.width/2, 
-			foeB[i].position.y - foeBImg.height/2);
-		
-			if(abs(disToFoeB) <= dis){
-				player.life--;
-				playerDieSound.setVolume(0.1);
-				playerDieSound.play();
-				return true;
-			}
-		}
-		
-
-	}
-	
-	// for(var i = 0;i < numOffoeA;i++){
-		// if(foeA[i] != null){
-			// var disToFoeA = dist(player.position.x - playerImg.width/2,
-			// player.position.y - playerImg.height/2, 
-			// foeA[i].position.x - foeAImg.width/2, 
-			// foeA[i].position.y - foeAImg.height/2);
-		
-			// if(abs(disToFoeA) <= dis){
-				// player.life--;
-				// playerDieSound.setVolume(0.1);
-				// playerDieSound.play();
-				// return true;
-			// }
-		// }
-		
-	// }
-	return false;
-	
-}
-
 function showLife(life){
 	for(var i=0;i < life;i++){
 		image(heartImg, 90 + i*35, 15);
@@ -435,5 +398,45 @@ function showMushroom(numOfMushroom){
 			image(mushroomImg, mushroom[i].position.x, mushroom[i].position.y);
 		}
 		
+	}
+}
+
+function isWin(){
+	for(var i = 0;i < numOffoeA;i++){
+		if(foeA[i] != null){
+			return false;
+		}
+	}
+	
+	for(var i = 0;i < numOffoeB;i++){
+		if(foeB[i] != null){
+			return false;
+		}
+	}
+	
+	return true;
+}
+
+function gameWin(){
+	push();
+	textFont(fontVag);
+	textSize(60);
+	text("Congratulations!", windowWidth/2.8, windowHeight/2);
+	pop();
+	if(!playedWinSound){
+		winSound.play();
+		playedWinSound = true;
+	}
+}
+
+function gameOver(){
+	push();
+	textFont(fontVag);
+	textSize(60);
+	text("You Lose!", windowWidth/2.5, windowHeight/2);
+	pop();
+	if(!playedLoseSound){
+		loseSound.play();
+		playedLoseSound = true;
 	}
 }
