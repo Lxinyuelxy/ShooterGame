@@ -1,7 +1,7 @@
 ﻿# ShooterGame
 homework using p5.js
 
-![截图](https://github.com/Lxinyuelxy/ShooterGame/blob/master/assets//jietu.PNG)
+![截图](https://github.com/Lxinyuelxy/ShooterGame/raw/master/assets/jietu.PNG)
 
 ###说明：
 - 两种类型敌人，一种无规律运动，一种会跟踪玩家
