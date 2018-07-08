@@ -32,7 +32,7 @@ var angleOfRotation = 0;
 
 
 function preload(){
-	bgImg = loadImage("./assets/bg.PNG");
+	bgImg = loadImage("./assets/bg.png");
 	heartImg = loadImage("./assets/heart.png"); 
 	playerImg = loadImage("./assets/player.png");
 	foeBImg = loadImage("./assets/foeB.png");
