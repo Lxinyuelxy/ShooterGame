@@ -39,7 +39,7 @@ function preload(){
 	foeAImg = loadImage("./assets/foeA.png");
 	mushroomImg = loadImage("./assets/mushroom.png");
 	bulletDirectionImg = loadImage("./assets/bulletDirection.png");
-	bulletImg = loadImage("./assets/bullet.png");	
+	bulletImg = loadImage("./assets/Bullet.png");	
 	fontVag = loadFont("./assets/vag.ttf");
 	playerDieSound = loadSound("./assets/playerDie.mp3");
 	winSound = loadSound("./assets/win.wav");
